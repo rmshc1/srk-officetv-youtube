@@ -14,7 +14,8 @@
      TV app (LG webOS) inside an iframe. Holds no secrets — public channel only. -->
 <div id="p"></div>
 <script>
-  var PLAYLIST = 'UU6aD7kCwr4peQndI0zG7V7Q'; // @srk_honda uploads (channel UC6aD7kCwr4peQndI0zG7V7Q)
+  var PLAYLIST = 'UU6aD7kCwr4peQndI0zG7V7Q'; // @srk_honda uploads = EVERY upload, auto-updating
+  var REFRESH_HOURS = 3;                     // re-fetch the list so new uploads appear / removed drop
   var player, tries = 0;
 
   function unmute() {
@@ -34,12 +35,18 @@
         autoplay: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, mute: 1, loop: 1
       },
       events: {
-        onReady: function (e) { e.target.setLoop(true); e.target.playVideo(); unmute(); },
+        onReady: function (e) {
+          e.target.setLoop(true); e.target.playVideo(); unmute();
+          // periodically re-fetch the uploads playlist: picks up new uploads, drops removed ones
+          setInterval(function () {
+            try { player.loadPlaylist({ listType: 'playlist', list: PLAYLIST, index: 0 }); player.setLoop(true); } catch (e) {}
+          }, REFRESH_HOURS * 3600 * 1000);
+        },
         onStateChange: function (e) {
           if (e.data === YT.PlayerState.PLAYING) unmute();
           if (e.data === YT.PlayerState.ENDED) e.target.playVideo();
         },
-        onError: function () { try { player.nextVideo(); } catch (e) {} }
+        onError: function () { try { player.nextVideo(); } catch (e) {} } // skip a deleted/blocked video
       }
     });
   }
