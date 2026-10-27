@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SRK YouTube loop</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  #p { width: 100%; height: 100%; border: 0; }
+</style>
+</head>
+<body>
+<!-- Loops the public @srk_honda uploads playlist with sound. Shown by the SRK Office Display
+     TV app (LG webOS) inside an iframe. Holds no secrets — public channel only. -->
+<div id="p"></div>
+<script>
+  var PLAYLIST = 'UU6aD7kCwr4peQndI0zG7V7Q'; // @srk_honda uploads (channel UC6aD7kCwr4peQndI0zG7V7Q)
+  var player, tries = 0;
+
+  function unmute() {
+    if (!player || !player.unMute) return;
+    player.setVolume(100);
+    player.unMute();
+    setTimeout(function () {
+      if (player.isMuted && player.isMuted() && tries++ < 6) unmute();
+    }, 800);
+  }
+
+  function onYouTubeIframeAPIReady() {
+    player = new YT.Player('p', {
+      host: 'https://www.youtube.com',
+      playerVars: {
+        listType: 'playlist', list: PLAYLIST,
+        autoplay: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, mute: 1, loop: 1
+      },
+      events: {
+        onReady: function (e) { e.target.setLoop(true); e.target.playVideo(); unmute(); },
+        onStateChange: function (e) {
+          if (e.data === YT.PlayerState.PLAYING) unmute();
+          if (e.data === YT.PlayerState.ENDED) e.target.playVideo();
+        },
+        onError: function () { try { player.nextVideo(); } catch (e) {} }
+      }
+    });
+  }
+
+  // the TV app asks for sound with postMessage({srk:'unmute'})
+  window.addEventListener('message', function (ev) {
+    if (ev.data && ev.data.srk === 'unmute') { tries = 0; unmute(); }
+  });
+
+  var s = document.createElement('script');
+  s.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(s);
+</script>
+</body>
+</html>
